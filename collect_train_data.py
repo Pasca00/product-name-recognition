@@ -13,9 +13,10 @@ if __name__ == '__main__':
 
     products = set()
 
-    i = 0
+    i = -1
     valid_pages = 0
     while valid_pages < opt.valid_pages:
+        i += 1
         print(f'(Curr website index: { i }, Curr valid website index: { valid_pages })')
         
         try:
@@ -27,29 +28,22 @@ if __name__ == '__main__':
                 if html_tree is not None:
                     valid_pages += 1
 
-                    is_buy_page = False
+                    is_buy_page = True
                     for element in html_tree.iter():
                         if element.__class__.__name__ == 'HtmlElement' and 'add to cart' in element.text_content().lower():
                             is_buy_page = True
                             break
 
-                    # if is_buy_page:
-                    #     elements = html_tree.xpath('//h1')
-                    #     for e in elements:
-                    #         text = ''.join(ch for ch in e.text_content() if ch.isalnum() or ch == ' ')
-                    #         products.add(text)
                     if is_buy_page:
                         for element in html_tree.iter():
                             classes = element.attrib.get('class')
                             if classes and 'product' in classes.lower() and 'title' in classes.lower():
-                                text = ''.join(ch for ch in element.text_content() if ch.isalnum() or ch == ' ')
-                                products.add(text)
+                                text = ''.join(ch for ch in element.text_content() if ch.isalnum() or ch == ' ' or ch == '-')
+                                products.add(text.strip())
             else:
                 print(f'Website { response.url } has returned status code { response.status_code }')
         except requests.exceptions.RequestException as e:
             continue
-
-        i += 1
 
 
     
