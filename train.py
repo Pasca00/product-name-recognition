@@ -64,11 +64,11 @@ if __name__ == '__main__':
 
     args = TrainingArguments(
         f"test-ner",
-        evaluation_strategy = "epoch",
+        evaluation_strategy = "no",
         learning_rate=1e-4,
         per_device_train_batch_size=BATCH_SIZE,
         per_device_eval_batch_size=BATCH_SIZE,
-        num_train_epochs=3,
+        num_train_epochs=5,
         weight_decay=1e-5,
     )
 
@@ -85,5 +85,4 @@ if __name__ == '__main__':
     )
 
     trainer.train()
-    trainer.evaluate()
     trainer.save_model('un-ner.model')
