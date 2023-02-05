@@ -71,13 +71,14 @@ if __name__ == '__main__':
     model = AutoModelForTokenClassification.from_pretrained(model_checkpoint, num_labels=len(label_list))
 
     args = TrainingArguments(
-        f"test-ner",
+        f"product-ner",
         evaluation_strategy = "epoch",
         learning_rate=1e-4,
         per_device_train_batch_size=BATCH_SIZE,
         per_device_eval_batch_size=BATCH_SIZE,
         num_train_epochs=5,
         weight_decay=1e-5,
+        save_strategy="no"
     )
 
     data_collator = DataCollatorForTokenClassification(tokenizer)
@@ -94,4 +95,4 @@ if __name__ == '__main__':
 
     trainer.train()
     trainer.evaluate()
-    trainer.save_model('un-ner.model')
+    trainer.save_model('product-ner.model')
