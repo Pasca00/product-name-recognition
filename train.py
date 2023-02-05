@@ -9,8 +9,9 @@ from transformers import AutoModelForTokenClassification, TrainingArguments, Tra
 from transformers import DataCollatorForTokenClassification
 
 label_list = ['O', 'B-P', 'I-P']
+label_encoding_dict = {'O': 0, 'B-P': 1, 'I-P': 2}
 
-BATCH_SIZE = 16
+BATCH_SIZE = 2
 
 model_checkpoint = "distilbert-base-uncased"
 
@@ -28,7 +29,7 @@ def get_tokens_and_labels(filename):
 def get_all_tokens_and_labels(dir):
     return pd.concat([get_tokens_and_labels(os.path.join(dir, filename)) for filename in os.listdir(dir)]).reset_index().drop('index', axis=1)
 
-def tokenize_and_align_labels(examples):
+def tokenize_and_align_labels(examples, label_all_tokens=True):
     tokenized_inputs = tokenizer(list(examples['tokens']), truncation=True, is_split_into_words=True)
 
     labels = []
@@ -38,8 +39,13 @@ def tokenize_and_align_labels(examples):
         for word_idx in word_ids:
             if word_idx is None:
                 label_ids.append(-100)
-            elif label[word_idx] == '0':
+            elif label[word_idx] == 'O':
                 label_ids.append(0)
+            elif word_idx != previous_word_idx:
+                label_ids.append(label_encoding_dict[label[word_idx]])
+            else:
+                label_ids.append(label_encoding_dict[label[word_idx]] if label_all_tokens else -100)
+            previous_word_idx = word_idx
 
         labels.append(label_ids)
         

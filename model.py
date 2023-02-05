@@ -15,7 +15,7 @@ label_list = ['O', 'B-P', 'I-P']
 if __name__ == '__main__':
     tokenizer = AutoTokenizer.from_pretrained('./un-ner.model/')
 
-    paragraph = '''Lava Lamp'''
+    paragraph = '''MyPillow Plant Stand'''
     tokens = tokenizer(paragraph)
     torch.tensor(tokens['input_ids']).unsqueeze(0).size()
 
