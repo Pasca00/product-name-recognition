@@ -1,8 +1,39 @@
 import pandas as pd
 import requests
 import lxml.html
-import os
+from lxml.html.clean import Cleaner
+import re
 import argparse
+import unicodedata
+from lxml.etree import tostring
+
+pattern = r"[\w']+|[.,!?;]"
+
+def write_element_text_to_file(file, element, is_product):
+    # text = unicodedata.normalize(
+    #     'NFKD', 
+    #     tostring(element)
+    # ).encode('ascii', 'ignore').decode().strip()
+
+    text = unicodedata.normalize(
+        'NFKD', 
+        element.text_content()
+    ).encode('ascii', 'ignore').decode().strip()
+
+    if text == '':
+        return
+
+    words = re.findall(pattern, text)
+    for i, w in enumerate(words):
+        if is_product:
+            label = 'B-P' if i == 0 else 'I-P'
+        else:
+            label = 'O'
+        
+        file.write(w + ' ' + label + '\n')
+
+    file.write('\n')
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -19,13 +50,21 @@ if __name__ == '__main__':
         i += 1
         print(f'(Curr website index: { i }, Curr valid website index: { valid_pages })')
         
+
         try:
             response = requests.get(websites.iloc[i]['max(page)'])
             if response.status_code == 200:
                 html = response.content
-                html_parser = lxml.html.HTMLParser(remove_comments=True)
-                html_tree = lxml.html.fromstring(html, parser=html_parser).find('body')
+
+                cleaner = Cleaner()
+                cleaner.comments = True
+                cleaner.style = True
+                cleaner.scripts = True
+                html_tree = cleaner.clean_html(lxml.html.fromstring(html)).find('body')
+                
                 if html_tree is not None:
+                    data_file = open(f'./data/in{valid_pages}', 'w')
+
                     valid_pages += 1
 
                     is_buy_page = True
@@ -33,13 +72,25 @@ if __name__ == '__main__':
                         if element.__class__.__name__ == 'HtmlElement' and 'add to cart' in element.text_content().lower():
                             is_buy_page = True
                             break
-
+                    
+                    products_elements = set()
                     if is_buy_page:
                         for element in html_tree.iter():
                             classes = element.attrib.get('class')
                             if classes and 'product' in classes.lower() and 'title' in classes.lower():
-                                text = ''.join(ch for ch in element.text_content() if ch.isalnum() or ch == ' ' or ch == '-')
-                                products.add(text.strip())
+                                products_elements.add(element)
+                    
+                    for element in html_tree.iter():
+                        if len(element) == 0:
+                            write_element_text_to_file(
+                                data_file, 
+                                element, 
+                                True if element in products_elements else False
+                            )
+
+                    data_file.close()
+                    
+                    
             else:
                 print(f'Website { response.url } has returned status code { response.status_code }')
         except requests.exceptions.RequestException as e:
@@ -47,15 +98,15 @@ if __name__ == '__main__':
 
 
     
-    if not os.path.exists('./text/'):
-        os.makedirs('./text/')
+    # if not os.path.exists('./text/'):
+    #     os.makedirs('./text/')
 
-    words_file = open(f'./text/in', 'w')
-    for p in products:
-        print(p)
-        # words = p.split()
-        # for j, word in enumerate(words):
-        #     c = 'B-P\n' if j == 0 else 'I-P\n'
-        #     words_file.write(word + ' ' + c)
+    # words_file = open(f'./text/in', 'w')
+    # for p in products:
+    #     print(p)
+    #     words = p.split()
+    #     for j, word in enumerate(words):
+    #         c = 'B-P\n' if j == 0 else 'I-P\n'
+    #         words_file.write(word + ' ' + c)
 
-    words_file.close()
+    # words_file.close()
