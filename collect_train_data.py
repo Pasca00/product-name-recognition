@@ -63,10 +63,6 @@ if __name__ == '__main__':
                 html_tree = cleaner.clean_html(lxml.html.fromstring(html)).find('body')
                 
                 if html_tree is not None:
-                    data_file = open(f'./data/in{valid_pages}', 'w')
-
-                    valid_pages += 1
-
                     is_buy_page = True
                     for element in html_tree.iter():
                         if element.__class__.__name__ == 'HtmlElement' and 'add to cart' in element.text_content().lower():
@@ -80,6 +76,11 @@ if __name__ == '__main__':
                             if classes and 'product' in classes.lower() and 'title' in classes.lower():
                                 products_elements.add(element)
                     
+                    if len(products_elements) == 0:
+                        continue
+                    
+                    data_file = open(f'./train_data/in{valid_pages}', 'w')
+
                     for element in html_tree.iter():
                         if len(element) == 0:
                             write_element_text_to_file(
@@ -89,6 +90,8 @@ if __name__ == '__main__':
                             )
 
                     data_file.close()
+
+                    valid_pages += 1
                     
                     
             else:
