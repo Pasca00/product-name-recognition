@@ -1,0 +1,5 @@
+,ner,words
+0,O,[CLS]
+1,I-P,lava
+2,I-P,lamp
+3,I-P,[SEP]

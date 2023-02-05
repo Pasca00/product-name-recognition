@@ -7,7 +7,6 @@ from datasets import load_metric
 from transformers import AutoTokenizer
 from transformers import AutoModelForTokenClassification, TrainingArguments, Trainer
 from transformers import DataCollatorForTokenClassification
-import torch
 
 label_list = ['O', 'B-P', 'I-P']
 
@@ -16,6 +15,7 @@ BATCH_SIZE = 16
 model_checkpoint = "distilbert-base-uncased"
 
 tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
+metric = load_metric("seqeval")
 
 def get_tokens_and_labels(filename):
     with open(filename, 'r') as f:
@@ -57,14 +57,16 @@ def compute_metrics(p):
     return {"precision": results["overall_precision"], "recall": results["overall_recall"], "f1": results["overall_f1"], "accuracy": results["overall_accuracy"]}
 
 if __name__ == '__main__':    
-    dataset = Dataset.from_pandas(get_all_tokens_and_labels('./data'))
-    tokenized_dataset = dataset.map(tokenize_and_align_labels, batched=True)
+    train_dataset = Dataset.from_pandas(get_all_tokens_and_labels('./train_data'))
+    test_dataset = Dataset.from_pandas(get_all_tokens_and_labels('./test_data'))
+    tokenized_train_dataset = train_dataset.map(tokenize_and_align_labels, batched=True)
+    tokenized_test_dataset = test_dataset.map(tokenize_and_align_labels, batched=True)
 
     model = AutoModelForTokenClassification.from_pretrained(model_checkpoint, num_labels=len(label_list))
 
     args = TrainingArguments(
         f"test-ner",
-        evaluation_strategy = "no",
+        evaluation_strategy = "epoch",
         learning_rate=1e-4,
         per_device_train_batch_size=BATCH_SIZE,
         per_device_eval_batch_size=BATCH_SIZE,
@@ -73,16 +75,17 @@ if __name__ == '__main__':
     )
 
     data_collator = DataCollatorForTokenClassification(tokenizer)
-    metric = load_metric("seqeval")
 
     trainer = Trainer(
         model,
         args,
-        train_dataset=tokenized_dataset,
+        train_dataset=tokenized_train_dataset,
+        eval_dataset=tokenized_test_dataset,
         data_collator=data_collator,
         tokenizer=tokenizer,
         compute_metrics=compute_metrics
     )
 
     trainer.train()
+    trainer.evaluate()
     trainer.save_model('un-ner.model')
