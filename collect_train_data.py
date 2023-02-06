@@ -7,28 +7,38 @@ import argparse
 import unicodedata
 from lxml.etree import tostring
 
-pattern = r"[\w']+|[.,!?;]"
+pattern = r"[\w']+|[.,!?;=<>_\-\"/]"
 
 def write_element_text_to_file(file, element, is_product):
-    # text = unicodedata.normalize(
-    #     'NFKD', 
-    #     tostring(element)
-    # ).encode('ascii', 'ignore').decode().strip()
-
     text = unicodedata.normalize(
         'NFKD', 
-        element.text_content()
+        tostring(element).decode()
     ).encode('ascii', 'ignore').decode().strip()
+
+    # text = unicodedata.normalize(
+    #     'NFKD', 
+    #     element.text_content()
+    # ).encode('ascii', 'ignore').decode().strip()
 
     if text == '':
         return
 
     words = re.findall(pattern, text)
+    text_content = False
+    start_of_text = False
     for i, w in enumerate(words):
-        if is_product:
-            label = 'B-P' if i == 0 else 'I-P'
+        if text_content and w == '<':
+            text_content = False
+
+        if is_product and text_content:
+            label = 'B-P' if start_of_text else 'I-P'
+            start_of_text = False
         else:
             label = 'O'
+        
+        if w == '>':
+            text_content = True
+            start_of_text = True
         
         file.write(w + ' ' + label + '\n')
 
