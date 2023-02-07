@@ -12,7 +12,7 @@ The model is trained to classify text as either a product name or not, thus, the
 in [train_data/data.csv](train_data/data.csv).
 After collecting the data, I did some manual data cleansing to correct some of the wrong labeling. \
 \
-For the model, I used the huggingface distilbert_base_uncased pretrained model and trained it to label text as either PRODUCT (1) or NONE (0).
+For the model itself, I used the huggingface distilbert_base_uncased pretrained model for sequence classification and trained it to label text as either PRODUCT (1) or NONE (0).
 \
 To run the model and extract the required data from all ~700 websites:
 ```
@@ -20,8 +20,8 @@ python model.py
 ```
 
 ## Results
-Given the list of 700+ websites, the model extracted a total of 3552 products. The result is not perfect, as it includes duplicates and sometimes text
-that does not represent the name of a product (e.g. 'Buy', 'View'). \
+Given the list of 700+ websites, the model extracted a total of 3552 products. The model could still be improved, as it includes duplicates and sometimes text
+that does not represent the name of a product (e.g. 'Buy', 'View'). These errors come from mislabeled training data.\
 A preview of the results:
 website | product_name
 --- | ---
