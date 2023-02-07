@@ -97,9 +97,9 @@ if __name__ == '__main__':
 
                                 if (classes and 'product' in classes.lower() and 'title' in classes.lower()) \
                                     or (href and ('/product/' in href.lower() or '/products/' in href.lower())):
-                                    labels.append(1)
+                                    labels.append(1) # Is product
                                 else:
-                                    labels.append(0)
+                                    labels.append(0) # Is not product
 
                     valid_pages += 1
                     
