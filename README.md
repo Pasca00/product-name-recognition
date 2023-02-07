@@ -1,10 +1,10 @@
 # product-name-recognition
 
-This model was trained to all product names from a given list of websites. First, to build the dataset, I crawled 100 valid pages from the given 
+This model was trained to extract all product names from a given list of websites. First, to build the dataset, I crawled 100 valid pages from the given 
 list of URLs (a page is considered valid if it returned the status code 200 and if it contains a product), and extracted product names given
 a few rules: if there is an 'Add to cart' button on the page, if there are HTML elements with the classes containing 'product' and 'title' or if there
 are links to a different page, whose URL contains '/product/' or '/products/'. This whole step of automatic data acquisition and labeling is done
-by running [collect_train_data.py](collect_train_data.py). \
+by running [collect_train_data.py](collect_train_data.py).
 ```
 python collect_train_data.py [--valid_pages=100]
 ```
