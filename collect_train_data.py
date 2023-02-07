@@ -56,10 +56,11 @@ if __name__ == '__main__':
 
     i = -1
     valid_pages = 0
+    sentences = []
+    labels = []
     while valid_pages < opt.valid_pages:
         i += 1
         print(f'(Curr website index: { i }, Curr valid website index: { valid_pages })')
-        
 
         try:
             response = requests.get(websites.iloc[i]['max(page)'])
@@ -79,27 +80,26 @@ if __name__ == '__main__':
                             is_buy_page = True
                             break
                     
-                    products_elements = set()
                     if is_buy_page:
                         for element in html_tree.iter():
-                            classes = element.attrib.get('class')
-                            if classes and 'product' in classes.lower() and 'title' in classes.lower():
-                                products_elements.add(element)
-                    
-                    if len(products_elements) == 0:
-                        continue
-                    
-                    data_file = open(f'./train_data/in{valid_pages}', 'w')
+                            if len(element) == 0:
+                                classes = element.attrib.get('class')
+                                href = element.attrib.get('href')
+                                text = unicodedata.normalize(
+                                    'NFKD', 
+                                    element.text_content()
+                                ).encode('ascii', 'ignore').decode().strip()
 
-                    for element in html_tree.iter():
-                        if len(element) == 0:
-                            write_element_text_to_file(
-                                data_file, 
-                                element, 
-                                True if element in products_elements else False
-                            )
+                                if text == '':
+                                    continue
+                                
+                                sentences.append(str(text))
 
-                    data_file.close()
+                                if (classes and 'product' in classes.lower() and 'title' in classes.lower()) \
+                                    or (href and ('/product/' in href.lower() or '/products/' in href.lower())):
+                                    labels.append(1) # Is product
+                                else:
+                                    labels.append(0) # Is not product
 
                     valid_pages += 1
                     
@@ -110,16 +110,5 @@ if __name__ == '__main__':
             continue
 
 
-    
-    # if not os.path.exists('./text/'):
-    #     os.makedirs('./text/')
-
-    # words_file = open(f'./text/in', 'w')
-    # for p in products:
-    #     print(p)
-    #     words = p.split()
-    #     for j, word in enumerate(words):
-    #         c = 'B-P\n' if j == 0 else 'I-P\n'
-    #         words_file.write(word + ' ' + c)
-
-    # words_file.close()
+    df = pd.DataFrame(data={'label': labels, 'text': sentences})
+    df.to_csv('./train_data/data.csv', index=False)

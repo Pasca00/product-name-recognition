@@ -1,28 +1,53 @@
-import os
-import itertools
 import pandas as pd
-import numpy as np
-from datasets import Dataset
-from datasets import load_metric
+import requests
+import lxml.html
+from lxml.html.clean import Cleaner
+import unicodedata
 from transformers import AutoTokenizer
-from transformers import AutoModelForTokenClassification, TrainingArguments, Trainer
-from transformers import DataCollatorForTokenClassification
+from transformers import AutoModelForSequenceClassification
 import torch
-
-
-label_list = ['O', 'B-P', 'I-P']
+from tqdm import tqdm
 
 if __name__ == '__main__':
-    tokenizer = AutoTokenizer.from_pretrained('./product-ner.model/')
+    tokenizer = AutoTokenizer.from_pretrained('./product-seq-classification.model/')
+    model = AutoModelForSequenceClassification.from_pretrained('./product-seq-classification.model/')
 
-    paragraph = '''Dining Table 4 Seater Wooden Kitchen Tables Oak 120cm Cafe Restaurant'''
-    tokens = tokenizer(paragraph)
-    torch.tensor(tokens['input_ids']).unsqueeze(0).size()
+    cleaner = Cleaner()
+    cleaner.comments = True
+    cleaner.style = True
+    cleaner.scripts = True
 
-    model = AutoModelForTokenClassification.from_pretrained('./product-ner.model/', num_labels=len(label_list))
-    predictions = model.forward(input_ids=torch.tensor(tokens['input_ids']).unsqueeze(0), attention_mask=torch.tensor(tokens['attention_mask']).unsqueeze(0))
-    predictions = torch.argmax(predictions.logits.squeeze(), axis=1)
-    predictions = [label_list[i] for i in predictions]
+    pages = []
+    products = []
 
-    words = tokenizer.batch_decode(tokens['input_ids'])
-    pd.DataFrame({'ner': predictions, 'words': words}).to_csv('product_ner.csv')
+    websites = pd.read_csv('./input/furniture stores pages.csv')
+    print('Searching for products...')
+    for i in tqdm(range(len(websites))):
+        try:
+            response = requests.get(websites.iloc[i]['max(page)'])
+            if response.status_code == 200:
+                html = response.content
+                html_tree = cleaner.clean_html(lxml.html.fromstring(html)).find('body')
+
+                if html_tree is not None:
+                    for element in html_tree.iter():
+                        if len(element) == 0:
+                            text = unicodedata.normalize(
+                                'NFKD', 
+                                element.text_content()
+                            ).encode('ascii', 'ignore').decode().strip()
+
+                            tokenized_text = tokenizer(text, return_tensors='pt', truncation=True)
+                            with torch.no_grad():
+                                logits = model(**tokenized_text).logits
+    
+                            predicted_class_id = logits.argmax().item()
+                            if model.config.id2label[predicted_class_id] == 'PRODUCT':
+                                pages.append(websites.iloc[i]['max(page)'])
+                                products.append(text)
+
+        except requests.exceptions.RequestException as e:
+            continue
+
+    df = pd.DataFrame({'website': pages, 'product_name': products})
+    df.to_csv('./products_final.csv')
