@@ -24,7 +24,7 @@ if __name__ == '__main__':
     print('Searching for products...')
     for i in tqdm(range(len(websites))):
         try:
-            response = requests.get(websites.iloc[i]['max(page)'])
+            response = requests.get(websites.iloc[118]['max(page)'])
             if response.status_code == 200:
                 html = response.content
                 html_tree = cleaner.clean_html(lxml.html.fromstring(html)).find('body')
@@ -37,7 +37,7 @@ if __name__ == '__main__':
                                 element.text_content()
                             ).encode('ascii', 'ignore').decode().strip()
 
-                            tokenized_text = tokenizer(text, return_tensors='pt')
+                            tokenized_text = tokenizer(text, return_tensors='pt', truncation=True)
                             with torch.no_grad():
                                 logits = model(**tokenized_text).logits
     
