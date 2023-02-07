@@ -36,7 +36,7 @@ if __name__ == '__main__':
         learning_rate=2e-5,
         per_device_train_batch_size=BATCH_SIZE,
         per_device_eval_batch_size=BATCH_SIZE,
-        num_train_epochs=5,
+        num_train_epochs=10,
         weight_decay=0.01,
         save_strategy="no"
     )
