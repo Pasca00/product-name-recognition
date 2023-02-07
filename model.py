@@ -24,7 +24,7 @@ if __name__ == '__main__':
     print('Searching for products...')
     for i in tqdm(range(len(websites))):
         try:
-            response = requests.get(websites.iloc[118]['max(page)'])
+            response = requests.get(websites.iloc[i]['max(page)'])
             if response.status_code == 200:
                 html = response.content
                 html_tree = cleaner.clean_html(lxml.html.fromstring(html)).find('body')
