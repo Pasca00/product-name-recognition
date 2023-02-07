@@ -100,9 +100,6 @@ if __name__ == '__main__':
                                     labels.append(1)
                                 else:
                                     labels.append(0)
-                    
-                    if 1 not in labels:
-                        continue
 
                     valid_pages += 1
                     

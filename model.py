@@ -5,23 +5,18 @@ import numpy as np
 from datasets import Dataset
 from datasets import load_metric
 from transformers import AutoTokenizer
-from transformers import AutoModelForTokenClassification, TrainingArguments, Trainer
-from transformers import DataCollatorForTokenClassification
+from transformers import AutoModelForSequenceClassification
 import torch
 
-label_list = ['O', 'B-P', 'I-P']
-
 if __name__ == '__main__':
-    tokenizer = AutoTokenizer.from_pretrained('./product-ner.model/')
+    tokenizer = AutoTokenizer.from_pretrained('./product-seq-classification.model/')
 
-    paragraph = '''<h1 class="product__title">Beadlight Cirrus LED Reading Light</h1>'''
-    tokens = tokenizer(paragraph)
-    torch.tensor(tokens['input_ids']).unsqueeze(0).size()
+    text = '''Jackson Slat Entry Table'''
+    tokens = tokenizer(text, return_tensors='pt')
 
-    model = AutoModelForTokenClassification.from_pretrained('./product-ner.model/', num_labels=len(label_list))
-    predictions = model.forward(input_ids=torch.tensor(tokens['input_ids']).unsqueeze(0), attention_mask=torch.tensor(tokens['attention_mask']).unsqueeze(0))
-    predictions = torch.argmax(predictions.logits.squeeze(), axis=1)
-    predictions = [label_list[i] for i in predictions]
-
-    words = tokenizer.batch_decode(tokens['input_ids'])
-    pd.DataFrame({'ner': predictions, 'words': words}).to_csv('product_ner.csv')
+    model = AutoModelForSequenceClassification.from_pretrained('./product-seq-classification.model/')
+    with torch.no_grad():
+        logits = model(**tokens).logits
+    
+    predicted_class_id = logits.argmax().item()
+    print(model.config.id2label[predicted_class_id])
