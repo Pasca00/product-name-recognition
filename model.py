@@ -9,13 +9,12 @@ from transformers import AutoModelForTokenClassification, TrainingArguments, Tra
 from transformers import DataCollatorForTokenClassification
 import torch
 
-
 label_list = ['O', 'B-P', 'I-P']
 
 if __name__ == '__main__':
     tokenizer = AutoTokenizer.from_pretrained('./product-ner.model/')
 
-    paragraph = '''Dining Table 4 Seater Wooden Kitchen Tables Oak 120cm Cafe Restaurant'''
+    paragraph = '''<h1 class="product__title">Beadlight Cirrus LED Reading Light</h1>'''
     tokens = tokenizer(paragraph)
     torch.tensor(tokens['input_ids']).unsqueeze(0).size()
 
